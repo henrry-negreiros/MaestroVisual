@@ -1,0 +1,11 @@
+# Ambientes Virtuais (Bloqueia a pasta venv de subir)
+venv/
+.venv/
+env/
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+
+# Configurações do VS Code
+.vscode/
