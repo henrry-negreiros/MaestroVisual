@@ -1,97 +1,81 @@
 import cv2
-import mediapipe as mp
-import math
+import time
 import numpy as np
+from app.camera import Camera
+from app.detector import DetectorMaos
+from app.gestos import CalculadorGestos
+from app.controlador import ControladorSO
 
-# A forma moderna de controlar o som no Windows (Sem comtypes, sem Activate!)
-from pycaw.pycaw import AudioUtilities
+def main():
+    # Inicializa todos os módulos do nosso sistema estruturado
+    obj_camera = Camera()
+    obj_detector = DetectorMaos()
+    obj_gestos = CalculadorGestos()
+    obj_controlador = ControladorSO()
 
-# 1. Configurar o controle de áudio do Windows (Super Direto)
-dispositivo = AudioUtilities.GetSpeakers()
-volume = dispositivo.EndpointVolume
+    print("Controlador Multimídia Modular Iniciado com Sucesso!")
+    print("Pressione 'q' na janela da câmera para encerrar.")
 
-# Obter o alcance do volume do computador (mínimo e máximo em dB)
-alcance_vol = volume.GetVolumeRange()
-vol_min = alcance_vol[0]
-vol_max = alcance_vol[1]
+    while True:
+        # 1. Captura o frame através do módulo Camera
+        sucesso, frame = obj_camera.capturar_frame()
+        if not sucesso:
+            break
 
-# 2. Inicializar o MediaPipe
-mp_maos = mp.solutions.hands
-mp_desenho = mp.solutions.drawing_utils
-maos = mp_maos.Hands(max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7)
+        tempo_atual = time.time()
 
-# Obter o alcance do volume do computador (mínimo e máximo em dB)
-alcance_vol = volume.GetVolumeRange()
-vol_min = alcance_vol[0]
-vol_max = alcance_vol[1]
+        # 2. Processa a IA e desenha o esqueleto através do módulo Detector
+        frame = obj_detector.encontrar_maos(frame)
+        pontos_mao = obj_detector.pegar_posicoes(frame)
 
-# 2. Inicializar o MediaPipe
-mp_maos = mp.solutions.hands
-mp_desenho = mp.solutions.drawing_utils
-maos = mp_maos.Hands(max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7)
+        # 3. Analisa a matemática dos dedos através do módulo Gestos
+        estado, valor_distancia = obj_gestos.analisar_gestos(pontos_mao, tempo_atual)
 
-# 3. Inicializar a câmera
-webcam = cv2.VideoCapture(0)
-print("Iniciando o Maestro com Controle de Volume... Aperte 'q' para sair.")
+        # 4. Executa as ações no Windows baseadas no estado retornado
+        if estado == "AJUSTANDO":
+            obj_controlador.ajustar_volume(valor_distancia)
+            cv2.putText(frame, "VOLUME AJUSTAVEL", (150, frame.shape[0] - 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
+        elif estado in ["MUTE", "PLAYPAUSE", "PROXIMA"]:
+            obj_controlador.executar_comando_midia(estado)
+            
+        # Feedbacks visuais na tela para o usuário (Interface)
+        if estado == "TRAVADO":
+            cv2.putText(frame, "VOLUME TRANCADO", (150, frame.shape[0] - 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        elif "MUTE" in estado:
+            cv2.putText(frame, "Gesto: MUTE DE EMERGENCIA", (130, 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
+        elif "PLAYPAUSE" in estado:
+            cv2.putText(frame, "Gesto: PLAY / PAUSE", (170, 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
+        elif "PROXIMA" in estado:
+            cv2.putText(frame, "Gesto: PRÓXIMA MÚSICA", (150, 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
-while True:
-    sucesso, frame = webcam.read()
-    if not sucesso:
-        print("Erro ao acessar a webcam.")
-        break
+        # 5. Renderização do Painel Visual de Volume (Barra Dinâmica)
+        porcentagem = obj_controlador.pegar_porcentagem_atual()
+        cor_painel = (0, 0, 255) if obj_gestos.volume_bloqueado else (0, 255, 0)
 
-    frame = cv2.flip(frame, 1)
-    h, w, c = frame.shape
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    resultado = maos.process(frame_rgb)
+        # Mostra a porcentagem numérica
+        cv2.putText(frame, f"{porcentagem}%", (50, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, cor_painel, 3)
 
-    if resultado.multi_hand_landmarks:
-        for pontos_maos in resultado.multi_hand_landmarks:
-            # Desenhar os pontos vermelhos e conexões na tela
-            mp_desenho.draw_landmarks(frame, pontos_maos, mp_maos.HAND_CONNECTIONS)
+        # Desenha o fundo e o preenchimento da barra lateral
+        altura_barra = int(np.interp(porcentagem, [0, 100], [400, 150]))
+        cv2.rectangle(frame, (50, 150), (85, 400), (80, 80, 80), -1)
+        cv2.rectangle(frame, (50, altura_barra), (85, 400), cor_painel, -1)
+        cv2.rectangle(frame, (50, 150), (85, 400), (255, 255, 255), 2)
 
-            # Obter coordenadas do Polegar (ponto 4) e Indicador (ponto 8)
-            polegar = pontos_maos.landmark[4]
-            indicador = pontos_maos.landmark[8]
+        # Exibe o frame final na tela
+        cv2.imshow("Calibrador de Som por Gestos", frame)
 
-            # Converter coordenadas normalizadas para pixels na tela
-            x1, y1 = int(polegar.x * w), int(polegar.y * h)
-            x2, y2 = int(indicador.x * w), int(indicador.y * h)
+        # Condição de saída: pressionar a tecla 'q'
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-            # Desenhar círculos destacados nesses dois dedos
-            cv2.circle(frame, (x1, y1), 10, (255, 0, 0), cv2.FILLED) # Azul no polegar
-            cv2.circle(frame, (x2, y2), 10, (255, 0, 0), cv2.FILLED) # Azul no indicador
-            cv2.line(frame, (x1, y1), (x2, y2), (255, 0, 0), 3)      # Linha conectando os dois
+    # Libera os recursos do hardware ao fechar
+    obj_camera.liberar()
 
-            # Calcular o centro da linha (onde vamos exibir a bolinha de status)
-            cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-
-            # Calcular a distância matemática (Hipotenusa) entre os dois pontos
-            distancia = math.hypot(x2 - x1, y2 - y1)
-
-            # Mapear a distância da câmera para a escala do volume do Windows
-            # Se a distância for menor que 30px -> Volume 0%. Se for maior que 200px -> Volume 100%
-            vol_ajustado = np.interp(distancia, [30, 200], [vol_min, vol_max])
-            porcentagem_vol = np.interp(distancia, [30, 200], [0, 100])
-
-            # Aplicar o volume de fato no Windows
-            volume.SetMasterVolumeLevel(vol_ajustado, None)
-
-            # Mudar a cor da bolinha central se o volume estiver no mínimo (mudo)
-            if distancia < 30:
-                cv2.circle(frame, (cx, cy), 10, (0, 0, 255), cv2.FILLED) # Vermelho (Mudo)
-            else:
-                cv2.circle(frame, (cx, cy), 10, (0, 255, 0), cv2.FILLED) # Verde (Ativo)
-
-            # Exibir a porcentagem do volume na tela
-            cv2.putText(frame, f'Volume: {int(porcentagem_vol)}%', (40, 50), 
-                        cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 3)
-
-    cv2.imshow("Maestro Virtual - Controle de Volume", frame)
-
-    # Aperte 'q' para fechar a tela
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-webcam.release()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main()
