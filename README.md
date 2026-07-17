@@ -1,10 +1,10 @@
-# 🎛️ Maestro Virtual - Inteligência Artificial para Controle de Áudio
+#  Maestro Virtual - Inteligência Artificial para Controle de Áudio
 
 Este é o primeiro projeto do meu portfólio de Engenharia de Software e Inteligência Artificial. O **Maestro Virtual** é um sistema de Visão Computacional de alta performance projetado para interpretar gestos manuais capturados pela webcam para controlar e manipular a reprodução de áudio e mídias do Windows em tempo real.
 
 ---
 
-## 🚀 Status do Projeto: Fase 2 Concluída (Arquitetura Modular)
+##  Status do Projeto: Fase 2 Concluída (Arquitetura Modular)
 
 Atualmente, o projeto concluiu com sucesso a sua **Fase 2**, atingindo a maturidade de um software comercial: a aplicação foi totalmente refatorada usando princípios de **Engenharia de Software (SOLID e POO)**, dividida em módulos independentes e equipada com filtros temporais e geométricos.
 
@@ -18,7 +18,7 @@ Atualmente, o projeto concluiu com sucesso a sua **Fase 2**, atingindo a maturid
 
 ---
 
-## 🛠️ Tecnologias Utilizadas e Conceitos Aplicados
+##  Tecnologias Utilizadas e Conceitos Aplicados
 
 * **Python 3.11+:** Linguagem base do projeto.
 * **OpenCV:** Captura, espelhamento e tratamento de matrizes de imagem em tempo real (conversão de canais BGR para RGB).
@@ -28,7 +28,7 @@ Atualmente, o projeto concluiu com sucesso a sua **Fase 2**, atingindo a maturid
 
 ---
 
-## 🏗️ Arquitetura do Sistema (Modular)
+##  Arquitetura do Sistema (Modular)
 
 O software foi desacoplado para seguir o princípio de responsabilidade única:
 ```text
