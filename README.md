@@ -8,7 +8,7 @@ Este é o primeiro projeto do meu portfólio de Engenharia de Software e Intelig
 
 Atualmente, o projeto concluiu com sucesso a sua **Fase 2**, atingindo a maturidade de um software comercial: a aplicação foi totalmente refatorada usando princípios de **Engenharia de Software (SOLID e POO)**, dividida em módulos independentes e equipada com filtros temporais e geométricos.
 
-### 🎮 Gestos Mapeados e Comandos:
+###  Gestos Mapeados e Comandos:
 * **Ajuste de Volume Linear:** Distância dinâmica em pixels entre a ponta do Polegar e do Indicador (Pinça).
 * **Play / Pause:** Gesto do **Joinha (👍)** (Polegar para cima com os outros 4 dedos fechados).
 * **Avançar Música:** Movimento dinâmico de **Swipe** (Deslizar a mão aberta rapidamente da direita para a esquerda).
