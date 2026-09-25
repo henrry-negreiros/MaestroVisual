@@ -1,49 +1,49 @@
-# 🎛️ Maestro Virtual - Inteligência Artificial para Controle de Áudio
+# MaestroVirtual - Sistema de Controle Computacional por Visão Computacional
 
-Este é o primeiro projeto do meu portfólio de Engenharia de Software e Inteligência Artificial. O **Maestro Virtual** é um sistema de Visão Computacional de alta performance projetado para interpretar gestos manuais capturados pela webcam para controlar e manipular a reprodução de áudio e mídias do Windows em tempo real.
+O **MaestroVirtual** é um software autoral de Interação Natural do Usuário (NUI) desenvolvido em Python para permitir o controle de sistemas operacionais e apresentações (como PowerPoint) sem contato físico, utilizando uma webcam convencional.
 
----
-
-## 🚀 Status do Projeto: Fase 2 Concluída (Arquitetura Modular)
-
-Atualmente, o projeto concluiu com sucesso a sua **Fase 2**, atingindo a maturidade de um software comercial: a aplicação foi totalmente refatorada usando princípios de **Engenharia de Software (SOLID e POO)**, dividida em módulos independentes e equipada com filtros temporais e geométricos.
-
-### 🎮 Gestos Mapeados e Comandos:
-* **Ajuste de Volume Linear:** Distância dinâmica em pixels entre a ponta do Polegar e do Indicador (Pinça).
-* **Play / Pause:** Gesto do **Joinha (👍)** (Polegar para cima com os outros 4 dedos fechados).
-* **Avançar Música:** Movimento dinâmico de **Swipe** (Deslizar a mão aberta rapidamente da direita para a esquerda).
-* **Mute de Emergência:** Gesto do **"V" de Vitória (✌️)**.
-* **Trancar Volume:** Mão completamente fechada (Punho).
-* **Destrancar Volume:** Juntar o polegar e o indicador em uma pinça curta (menos de 30px).
+O sistema processa o fluxo de vídeo em tempo real, mapeia os pontos articulares das mãos e converte gestos específicos em comandos nativos do Windows OS (via atalhos de teclado e manipulação de janelas), eliminando a necessidade de periféricos físicos como mouses ou passadores de slide.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas e Conceitos Aplicados
+## 1. Modos de Operação e Mapeamento de Gestos
 
-* **Python 3.11+:** Linguagem base do projeto.
-* **OpenCV:** Captura, espelhamento e tratamento de matrizes de imagem em tempo real (conversão de canais BGR para RGB).
-* **MediaPipe (Google):** Pipeline de IA utilizado para o rastreamento dos 21 pontos tridimensionais (landmarks) da mão humana.
-* **PyAutoGUI & PyCaw:** Bibliotecas de integração para controle direto de hardware de áudio (dB) e simulação de teclas multimídia do SO.
-* **Conceitos de Engenharia:** Encapsulamento, Máquina de Estados (State Machine), Debouncing para tratamento de oscilação de frames e Geometria Analítica (Distância Euclidiana via Teorema de Pitágoras).
+O software opera com uma Máquina de Estados Finitos (FSM) para validar a intenção dos gestos e evitar disparos acidentais (*falsos positivos*).
+
+### Modo Apresentação
+* **Iniciar Apresentação (`F5`):** Manter o punho fechado por 2,0 segundos e abrir a mão. O sistema dispara a tecla `F5` e altera o foco do SO para trazer a janela do PowerPoint para o primeiro plano.
+* **Navegação de Slides (`Direita` / `Esquerda`):** Dedo indicador levantado, realizando movimento de varredura horizontal no eixo X (arraste para a esquerda avança; arraste para a direita retorna).
+* **Encerrar Apresentação (`ESC`):** Dedo mínimo (mindinho) levantado isoladamente por 1,5 segundos.
+
+### Modo Mídia
+* **Ajuste de Volume (0% a 100%):** Distância vetorial euclidiana entre as extremidades do polegar e do indicador (gesto de pinça).
+* **Play / Pause:** Polegar apontado para cima com os demais dedos recolhidos.
+* **Mute / Unmute:** Gestos com os dedos indicador e médio levantados (sinal de V).
+* **Trava de Segurança de Áudio:** Punho fechado no modo mídia para congelar a barra de volume e permitir a movimentação livre da mão.
 
 ---
 
-## 🏗️ Arquitetura do Sistema (Modular)
+## 2. Arquitetura Técnica e Tecnologias
 
-O software foi desacoplado para seguir o princípio de responsabilidade única:
+* **Linguagem:** Python 3.10+
+* **Processamento de Vídeo:** OpenCV (captura em resolução otimizada $320 \times 240$ a 30 FPS para minimizar uso de CPU/GPU).
+* **Reconhecimento de Gestos:** Google MediaPipe Hands (extração e rastreamento de 21 coordenadas tridimensionais das articulações da mão).
+* **Integração com SO:** PyAutoGUI (emulação de eventos de teclado) e PyGetWindow (gerenciamento e alternância de foco entre janelas ativas).
+* **Compilação:** PyInstaller (empacotamento na modalidade `--onedir` para otimização de tempo de inicialização em ambiente de execução final).
+
+---
+
+## 3. Estrutura do Projeto
+
 ```text
-MaestroVisual/
-│
+MaestroVirtual/
 ├── app/
-│   ├── __init__.py
-│   ├── camera.py      # Responsável exclusivo pelo hardware da webcam
-│   ├── detector.py    # Responsável exclusivo por rodar a IA do MediaPipe
-│   ├── gestos.py      # Responsável exclusivo pela lógica matemática e estados
-│   └── controlador.py # Responsável exclusivo pela ponte com o Windows
-│
-├── venv/              # Ambiente virtual isolado (Ignorado no Git)
-├── maestro_ia.py      # Arquivo Main (Maestro que orquestra os módulos)
-└── .gitignore         # Filtro de arquivos locais
+│   ├── camera.py        # Inicialização da webcam e tratamento dos frames OpenCV
+│   ├── controlador.py   # Gerenciamento de foco de janelas e emulação de comandos do SO
+│   └── gestos.py        # Mapeamento vetorial, cálculo de distâncias e máquina de estados
+├── maestro_ia.py        # Loop principal e inicialização dos componentes
+├── requirements.txt     # Dependências do projeto
+└── README.md            # Documentação técnica
 
 1. Clone o repositório:
 ```bash
@@ -55,7 +55,10 @@ cd MaestroVisual
 venv\Scripts\activate
 
 3. instale as dependencias necessárias:
-pip install opencv-python mediapipe pyautogui pycaw numpy
+pip install -r requirements.txt
 
 4.execute a aplicação: 
-python maestro_ia.py
+python maestro_ia.py 
+
+5. geração executável (exe) 
+ pyinstaller --noconsole --onedir --noconfirm --name "MaestroVirtual_v2" --collect-all mediapipe maestro_ia.py
