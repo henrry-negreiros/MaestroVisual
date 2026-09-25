@@ -13,7 +13,7 @@ O software opera com uma Máquina de Estados Finitos (FSM) para validar a inten�
 ### Modo Apresentação
 * **Iniciar Apresentação (`F5`):** Manter o punho fechado por 2,0 segundos e abrir a mão. O sistema dispara a tecla `F5` e altera o foco do SO para trazer a janela do PowerPoint para o primeiro plano.
 * **Navegação de Slides (`Direita` / `Esquerda`):** Dedo indicador levantado, realizando movimento de varredura horizontal no eixo X (arraste para a esquerda avança; arraste para a direita retorna).
-* **Encerrar Apresentação (`ESC`):** Dedo mínimo (mindinho) levantado isoladamente por 1,5 segundos.
+
 
 ### Modo Mídia
 * **Ajuste de Volume (0% a 100%):** Distância vetorial euclidiana entre as extremidades do polegar e do indicador (gesto de pinça).

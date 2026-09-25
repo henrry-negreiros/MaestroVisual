@@ -3,6 +3,7 @@ import mediapipe as mp
 
 class DetectorMaos:
     def __init__(self):
+        
         # Inicializa as ferramentas de desenho e o modelo de mãos do MediaPipe
         self.mp_maos = mp.solutions.hands
         self.mp_desenho = mp.solutions.drawing_utils

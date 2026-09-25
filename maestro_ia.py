@@ -1,81 +1,106 @@
 import cv2
 import time
-import numpy as np
+import os
 from app.camera import Camera
 from app.detector import DetectorMaos
 from app.gestos import CalculadorGestos
 from app.controlador import ControladorSO
+from app.interface import InterfaceHUD
 
 def main():
-    # Inicializa todos os módulos do nosso sistema estruturado
     obj_camera = Camera()
     obj_detector = DetectorMaos()
     obj_gestos = CalculadorGestos()
-    obj_controlador = ControladorSO()
+    obj_audio = ControladorSO()
+    obj_hud = InterfaceHUD()
 
-    print("Controlador Multimídia Modular Iniciado com Sucesso!")
-    print("Pressione 'q' na janela da câmera para encerrar.")
+    volume_atual = 50
+    estado_atual = "INICIANDO"
+    modo_atual = "MIDIA"  # Alterna entre "MIDIA" e "APRESENTACAO"
+
+    print(" Maestro Virtual Fase 4 iniciado!")
+    print(" Pressione 'm' para alternar o modo (Mídia / Apresentação)")
+    print(" Pressione 'q' para sair.")
 
     while True:
-        # 1. Captura o frame através do módulo Camera
         sucesso, frame = obj_camera.capturar_frame()
         if not sucesso:
             break
+ 
+        # Processa a mão via IA
+        frame = obj_detector.encontrar_maos(frame)
+        lista_pontos = obj_detector.pegar_posicoes(frame)
 
         tempo_atual = time.time()
 
-        # 2. Processa a IA e desenha o esqueleto através do módulo Detector
-        frame = obj_detector.encontrar_maos(frame)
-        pontos_mao = obj_detector.pegar_posicoes(frame)
+        # Chama o analisador de gestos
+        estado_gesto, novo_vol = obj_gestos.analisar_gestos(lista_pontos, tempo_atual, modo_atual)
 
-        # 3. Analisa a matemática dos dedos através do módulo Gestos
-        estado, valor_distancia = obj_gestos.analisar_gestos(pontos_mao, tempo_atual)
+        # PROCESSAMENTO DOS ESTADOS E COMANDOS
+        if estado_gesto in ["PLAYPAUSE", "MUTE"]:
+            obj_audio.executar_comando_midia(estado_gesto)
+            estado_atual = estado_gesto
 
-        # 4. Executa as ações no Windows baseadas no estado retornado
-        if estado == "AJUSTANDO":
-            obj_controlador.ajustar_volume(valor_distancia)
-            cv2.putText(frame, "VOLUME AJUSTAVEL", (150, frame.shape[0] - 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        # --- TRATAMENTO DO NOVO GESTO: ABRIR SLIDE ---
+        elif estado_gesto == "ABRIR_SLIDE":
+            # Caminho opcional do arquivo de apresentação (caso queira abrir direto um arquivo)
+            caminho_slide = r"C:\Users\Gabriel\OneDrive\Anexos\Área de Trabalho\TRABALHO-VTO\apresentação_VTO.ppsx"
             
-        elif estado in ["MUTE", "PLAYPAUSE", "PROXIMA"]:
-            obj_controlador.executar_comando_midia(estado)
+            if os.path.exists(caminho_slide):
+                os.startfile(caminho_slide)
+
+                # Traz o PowerPoint para a frente automaticamente!
+                obj_audio.focar_janela_powerpoint()
+                print(" Apresentação iniciada e focada!") 
+            else:
+                obj_audio.executar_comando_slide("INICIAR")
             
-        # Feedbacks visuais na tela para o usuário (Interface)
-        if estado == "TRAVADO":
-            cv2.putText(frame, "VOLUME TRANCADO", (150, frame.shape[0] - 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        elif "MUTE" in estado:
-            cv2.putText(frame, "Gesto: MUTE DE EMERGENCIA", (130, 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
-        elif "PLAYPAUSE" in estado:
-            cv2.putText(frame, "Gesto: PLAY / PAUSE", (170, 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
-        elif "PROXIMA" in estado:
-            cv2.putText(frame, "Gesto: PRÓXIMA MÚSICA", (150, 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+            modo_atual = "APRESENTACAO"  # Muda o modo para apresentação automaticamente
+            estado_atual = "ABRINDO SLIDE"
 
-        # 5. Renderização do Painel Visual de Volume (Barra Dinâmica)
-        porcentagem = obj_controlador.pegar_porcentagem_atual()
-        cor_painel = (0, 0, 255) if obj_gestos.volume_bloqueado else (0, 255, 0)
+        elif estado_gesto == "PROXIMA":
+            if modo_atual == "MIDIA":
+                obj_audio.executar_comando_midia("PROXIMA")
+            elif modo_atual == "APRESENTACAO":
+                obj_audio.executar_comando_slide("PROXIMO")
+            estado_atual = "PROXIMO SLIDE" if modo_atual == "APRESENTACAO" else "PROXIMA MUSICA"
 
-        # Mostra a porcentagem numérica
-        cv2.putText(frame, f"{porcentagem}%", (50, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, cor_painel, 3)
+        elif estado_gesto == "ANTERIOR":
+            if modo_atual == "MIDIA":
+                obj_audio.executar_comando_midia("ANTERIOR")
+            elif modo_atual == "APRESENTACAO":
+                obj_audio.executar_comando_slide("ANTERIOR")
+            estado_atual = "SLIDE ANTERIOR" if modo_atual == "APRESENTACAO" else "MUSICA ANTERIOR"
 
-        # Desenha o fundo e o preenchimento da barra lateral
-        altura_barra = int(np.interp(porcentagem, [0, 100], [400, 150]))
-        cv2.rectangle(frame, (50, 150), (85, 400), (80, 80, 80), -1)
-        cv2.rectangle(frame, (50, altura_barra), (85, 400), cor_painel, -1)
-        cv2.rectangle(frame, (50, 150), (85, 400), (255, 255, 255), 2)
+        elif estado_gesto == "AJUSTANDO":
+            volume_atual = novo_vol
+            obj_audio.atualizar_volume(volume_atual)
+            estado_atual = "AJUSTANDO"
 
-        # Exibe o frame final na tela
-        cv2.imshow("Calibrador de Som por Gestos", frame)
+        elif estado_gesto != "NENHUM":
+            estado_atual = estado_gesto
 
-        # Condição de saída: pressionar a tecla 'q'
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        else:
+            if len(lista_pontos) == 0:
+                estado_atual = "AGUARDANDO MAO"
+
+        # Desenha a Interface Gráfica (HUD)
+        obj_hud.desenhar_painel_status(frame, estado_atual, volume_atual, modo_atual)
+        obj_hud.desenhar_barra_volume(frame, volume_atual)
+
+        # Exibe o frame final
+        cv2.imshow("Maestro Virtual - Controle por Gestos", frame)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
             break
+        elif key == ord('m'):
+            # Alterna entre os modos MIDIA e APRESENTACAO
+            modo_atual = "APRESENTACAO" if modo_atual == "MIDIA" else "MIDIA"
+            print(f" Modo alterado para: {modo_atual}")
 
-    # Libera os recursos do hardware ao fechar
     obj_camera.liberar()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main()
+    main() 
