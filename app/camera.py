@@ -10,9 +10,9 @@ class Camera:
         self.webcam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
         # Configura a janela para iniciar em tamanho compacto
-        nome_janela = "Maestro Virtual - Controle por Gestos"
-        cv2.namedWindow(nome_janela, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(nome_janela, 320, 240)
+        self.nome_janela = "Maestro Virtual - Controle por Gestos"
+        cv2.namedWindow(self.nome_janela, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(self.nome_janela, 320, 240)
         
     # Força a janela a NÃO ficar no topo (0 = Normal/Segundo plano)
         try:
